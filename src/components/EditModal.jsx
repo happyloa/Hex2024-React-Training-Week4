@@ -40,7 +40,11 @@ export default function EditModal({
   const handleConfirm = async () => {
     setIsLoading(true);
     try {
-      await updateProductData(templateData.id);
+      const updatedData = {
+        ...templateData,
+        tags: templateData.tags.split(",").map((tag) => tag.trim()), // 將逗號分隔的字串轉為陣列
+      };
+      await updateProductData(updatedData.id, updatedData);
     } finally {
       setIsLoading(false);
     }
@@ -176,7 +180,7 @@ export default function EditModal({
                       className="form-control"
                       placeholder="請輸入標籤，用逗號隔開，例如：標籤1, 標籤2"
                       value={templateData.tags || ""}
-                      onChange={handleModalInputChange}
+                      onChange={(event) => handleModalInputChange(event)}
                       disabled={isLoading}
                     />
                   </div>

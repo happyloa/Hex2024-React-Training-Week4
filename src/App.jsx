@@ -39,6 +39,20 @@ export default function App() {
   }); // Modal 表單資料
   const [modalType, setModalType] = useState(""); // Modal 類型 ("edit" | "new" | "delete")
 
+  const handleModalInputChange = (event) => {
+    const { id, value, type, checked } = event.target;
+
+    setTemplateData((prevData) => ({
+      ...prevData,
+      [id]:
+        id === "tags"
+          ? value // 將 tags 作為純字串儲存，後續處理
+          : type === "checkbox"
+          ? checked
+          : value,
+    }));
+  };
+
   /**
    * getProductData - 取得產品資料
    * @param {number} page - 頁碼（預設為 1）
@@ -191,6 +205,7 @@ export default function App() {
           {/* 顯示產品操作 Modal */}
           <ProductModal
             modalType={modalType}
+            handleModalInputChange={handleModalInputChange}
             templateData={templateData}
             closeModal={closeModal}
             updateProductData={updateProductData}

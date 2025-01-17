@@ -35,7 +35,11 @@ export default function DeleteModal({
   const handleConfirm = async () => {
     setIsLoading(true);
     try {
-      await delProductData(templateData.id);
+      const updatedData = {
+        ...templateData,
+        tags: templateData.tags.split(",").map((tag) => tag.trim()), // 將逗號分隔的字串轉為陣列
+      };
+      await updateProductData(updatedData.id, updatedData);
     } finally {
       setIsLoading(false);
     }
