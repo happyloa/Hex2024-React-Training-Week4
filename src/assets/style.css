@@ -1,0 +1,38 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&display=swap");
+
+html,
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  height: 100%;
+  text-align: center;
+  background-color: #f8f9fa; /* 添加背景色，提升視覺效果 */
+}
+
+.login {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100vh;
+}
+
+.form-signin {
+  width: 100%;
+  max-width: 800px; /* 增加最大寬度，讓表單更寬 */
+  padding: 20px; /* 增加內邊距，讓內容更舒適 */
+  margin: auto;
+  border-radius: 8px; /* 添加圓角 */
+}
+
+img {
+  object-fit: contain;
+  max-width: 100%;
+}
+
+.primary-image {
+  height: 300px;
+}
+
+.images {
+  height: 150px;
+  border-radius: 8px; /* 添加圓角 */
+}
