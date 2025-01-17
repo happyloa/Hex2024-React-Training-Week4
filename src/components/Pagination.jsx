@@ -15,7 +15,7 @@ export default function Pagination({ pagination, changePage }) {
         <li className={`page-item ${has_pre ? "" : "disabled"}`}>
           <a
             href="/"
-            className="page-link"
+            className="page-link bg-light text-primary border-primary"
             aria-label="Previous"
             onClick={(event) => handlePageChange(event, current_page - 1)}>
             <span aria-hidden="true">&laquo;</span>
@@ -30,7 +30,11 @@ export default function Pagination({ pagination, changePage }) {
               className={`page-item ${current_page === page ? "active" : ""}`}>
               <a
                 href="/"
-                className="page-link"
+                className={`page-link ${
+                  current_page === page
+                    ? "bg-primary text-white border-primary"
+                    : "bg-light text-primary border-primary"
+                }`}
                 onClick={(event) => handlePageChange(event, page)}>
                 {page}
               </a>
@@ -42,7 +46,7 @@ export default function Pagination({ pagination, changePage }) {
         <li className={`page-item ${has_next ? "" : "disabled"}`}>
           <a
             href="/"
-            className="page-link"
+            className="page-link bg-light text-primary border-primary"
             aria-label="Next"
             onClick={(event) => handlePageChange(event, current_page + 1)}>
             <span aria-hidden="true">&raquo;</span>
