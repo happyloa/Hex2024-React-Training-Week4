@@ -67,7 +67,10 @@ export default function App() {
         price: Number(templateData.price),
         is_enabled: templateData.is_enabled ? 1 : 0,
         imagesUrl: templateData.imagesUrl,
-        tags: templateData.tags.split(", ").map((tag) => tag.trim()), // 將標籤從字串轉為陣列
+        tags:
+          typeof templateData.tags === "string"
+            ? templateData.tags.split(",").map((tag) => tag.trim())
+            : templateData.tags,
       },
     };
 
@@ -120,7 +123,9 @@ export default function App() {
       imageUrl: product.imageUrl || "",
       title: product.title || "",
       category: product.category || "",
-      tags: product.tags || "",
+      tags: Array.isArray(product.tags)
+        ? product.tags.join(", ")
+        : product.tags || "",
       unit: product.unit || "",
       origin_price: product.origin_price || "",
       price: product.price || "",
