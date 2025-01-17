@@ -14,14 +14,14 @@ const API_PATH = "book-rental";
  * App - 主應用程式元件
  */
 export default function App() {
-  // 狀態管理
-  const [isAuth, setisAuth] = useState(false); // 用於記錄使用者是否登入
-  const [products, setProducts] = useState([]); // 用於存放產品清單
+  const [isAuth, setisAuth] = useState(false); // 記錄使用者是否登入
+  const [products, setProducts] = useState([]); // 產品清單
   const [templateData, setTemplateData] = useState({
     id: "",
     imageUrl: "",
     title: "",
     category: "",
+    tags: "", // 新增的標籤欄位
     unit: "",
     origin_price: "",
     price: "",
@@ -29,8 +29,8 @@ export default function App() {
     content: "",
     is_enabled: false,
     imagesUrl: [],
-  }); // 用於管理 Modal 的表單資料
-  const [modalType, setModalType] = useState(""); // 記錄 Modal 的類型 ("edit" | "new" | "delete")
+  }); // Modal 表單資料
+  const [modalType, setModalType] = useState(""); // Modal 類型 ("edit" | "new" | "delete")
 
   /**
    * getProductData - 取得產品資料
@@ -40,7 +40,7 @@ export default function App() {
       const response = await axios.get(
         `${API_BASE}/api/${API_PATH}/admin/products`
       );
-      setProducts(response.data.products); // 更新產品清單狀態
+      setProducts(response.data.products);
     } catch (err) {
       console.error(
         "取得產品資料失敗:",
@@ -63,19 +63,20 @@ export default function App() {
     const productData = {
       data: {
         ...templateData,
-        origin_price: Number(templateData.origin_price), // 確保原價是數字
-        price: Number(templateData.price), // 確保售價是數字
-        is_enabled: templateData.is_enabled ? 1 : 0, // 將布林值轉為數字
-        imagesUrl: templateData.imagesUrl, // 圖片 URL 陣列
+        origin_price: Number(templateData.origin_price),
+        price: Number(templateData.price),
+        is_enabled: templateData.is_enabled ? 1 : 0,
+        imagesUrl: templateData.imagesUrl,
+        tags: templateData.tags.split(", ").map((tag) => tag.trim()), // 將標籤從字串轉為陣列
       },
     };
 
     try {
       if (modalType === "edit") {
-        await axios.put(url, productData); // 發送更新請求
+        await axios.put(url, productData);
         console.log("產品更新成功");
       } else {
-        await axios.post(url, productData); // 發送新增請求
+        await axios.post(url, productData);
         console.log("產品新增成功");
       }
       setModalType(""); // 關閉 Modal
@@ -119,6 +120,7 @@ export default function App() {
       imageUrl: product.imageUrl || "",
       title: product.title || "",
       category: product.category || "",
+      tags: product.tags || "",
       unit: product.unit || "",
       origin_price: product.origin_price || "",
       price: product.price || "",
@@ -127,14 +129,14 @@ export default function App() {
       is_enabled: product.is_enabled || false,
       imagesUrl: product.imagesUrl || [],
     });
-    setModalType(type); // 設定 Modal 類型
+    setModalType(type);
   };
 
   /**
    * closeModal - 關閉 Modal
    */
   const closeModal = () => {
-    setModalType(""); // 清空 Modal 類型
+    setModalType("");
   };
 
   /**
@@ -146,20 +148,20 @@ export default function App() {
       /(?:(?:^|.*;\s*)hexToken\s*=\s*([^;]*).*$)|^.*$/,
       "$1"
     );
-    axios.defaults.headers.common.Authorization = token; // 設定 Axios 的授權標頭
+    axios.defaults.headers.common.Authorization = token;
 
     // 驗證使用者是否已登入
     (async () => {
       try {
         await axios.post(`${API_BASE}/api/user/check`);
-        setisAuth(true); // 設定為已登入
-        getProductData(); // 取得產品資料
+        setisAuth(true);
+        getProductData();
       } catch (err) {
         console.error("驗證失敗:", err.response?.data?.message || err.message);
-        setisAuth(false); // 設定為未登入
+        setisAuth(false);
       }
     })();
-  }, []); // 僅在元件初次渲染時執行
+  }, []);
 
   return (
     <>
@@ -169,7 +171,7 @@ export default function App() {
           <ProductList
             products={products}
             openModal={openModal}
-            setisAuth={setisAuth} // 用於處理登出
+            setisAuth={setisAuth}
           />
           {/* 顯示產品操作 Modal */}
           <ProductModal

@@ -126,42 +126,67 @@ export default function AddNewModal({
                 </div>
               </div>
               <div className="col-md-8">
-                {/* 基本資訊輸入 */}
-                {[
-                  {
-                    id: "title",
-                    label: "標題",
-                    placeholder: "請輸入標題",
-                    type: "text",
-                  },
-                  {
-                    id: "category",
-                    label: "分類",
-                    placeholder: "請輸入分類",
-                    type: "text",
-                  },
-                  {
-                    id: "unit",
-                    label: "單位",
-                    placeholder: "請輸入單位（例如：本、件、箱）",
-                    type: "text",
-                  },
-                ].map((field) => (
-                  <div className="mb-3" key={field.id}>
-                    <label htmlFor={field.id} className="form-label fw-bold">
-                      {field.label}
+                {/* 標題欄位 */}
+                <div className="mb-3">
+                  <label htmlFor="title" className="form-label fw-bold">
+                    標題
+                  </label>
+                  <input
+                    id="title"
+                    type="text"
+                    className="form-control"
+                    placeholder="請輸入標題"
+                    value={templateData.title || ""}
+                    onChange={handleModalInputChange}
+                    disabled={isLoading}
+                  />
+                </div>
+                {/* 分類與標籤欄位 */}
+                <div className="row">
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="category" className="form-label fw-bold">
+                      分類
                     </label>
                     <input
-                      id={field.id}
-                      type={field.type}
+                      id="category"
+                      type="text"
                       className="form-control"
-                      placeholder={field.placeholder}
-                      value={templateData[field.id] || ""}
+                      placeholder="請輸入分類"
+                      value={templateData.category || ""}
                       onChange={handleModalInputChange}
                       disabled={isLoading}
                     />
                   </div>
-                ))}
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="tags" className="form-label fw-bold">
+                      標籤
+                    </label>
+                    <input
+                      id="tags"
+                      type="text"
+                      className="form-control"
+                      placeholder="請輸入標籤，用逗號隔開，例如：標籤1, 標籤2"
+                      value={templateData.tags || ""}
+                      onChange={handleModalInputChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+                {/* 單位欄位 */}
+                <div className="mb-3">
+                  <label htmlFor="unit" className="form-label fw-bold">
+                    單位
+                  </label>
+                  <input
+                    id="unit"
+                    type="text"
+                    className="form-control"
+                    placeholder="請輸入單位（例如：本、件、箱）"
+                    value={templateData.unit || ""}
+                    onChange={handleModalInputChange}
+                    disabled={isLoading}
+                  />
+                </div>
                 {/* 價格資訊輸入 */}
                 <div className="row">
                   {[
