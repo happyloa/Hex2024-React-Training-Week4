@@ -69,6 +69,7 @@ src
 src/components
 ├── Login.jsx                         登入表單
 ├── ProductList.jsx                   商品列表
+├── Pagination.jsx                    分頁元件
 ├── AddNewModal.jsx                   新增商品 Modal
 ├── EditModal.jsx                     編輯商品 Modal
 ├── DeleteModal.jsx                   刪除商品 Modal
