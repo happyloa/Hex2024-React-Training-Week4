@@ -1,9 +1,8 @@
+![](https://i.imgur.com/281HBnX.png)
 
-![](https://i.imgur.com/QMkKWmC.png)
+# 六角 2024 React 作品實戰冬季班第四週作業 - 元件化
 
-# 六角 2024 React 作品實戰冬季班第三週作業 - 熟練 React.js
-
-- [線上部署連結](http://hex2024-react-training-week3.worksbyaaron.com/)
+- [線上部署連結](http://hex2024-react-training-week4.worksbyaaron.com/)
 - [作業範例](https://github.com/hexschool/react-training-chapter-2024)
 - [註冊連結、測試管理平台](https://ec-course-api.hexschool.io/)
 - [API 文件](https://hexschool.github.io/ec-courses-api-swaggerDoc/)
@@ -24,13 +23,13 @@
 將專案複製到本地端
 
 ```sh
-$ git clone https://github.com/happyloa/Hex2024-React-Training-Week3.git
+$ git clone https://github.com/happyloa/Hex2024-React-Training-Week4.git
 ```
 
 套件安裝
 
 ```sh
-$ cd hex2024-react-training-week3
+$ cd hex2024-react-training-week4
 $ npm install
 ```
 
@@ -56,8 +55,8 @@ http://localhost:5173/
 
 ```
 src
-├── App.jsx                          負責發出 http 請求並透過 props 傳遞結果給子元件的主要元件
-└── main.jsx                         React 的主要元件
+├── App.jsx                           負責發出 http 請求並透過 props 傳遞結果給子元件的主要元件
+└── main.jsx                          React 的主要元件
 ```
 
 ## 元件檔案（Components）
@@ -68,14 +67,17 @@ src
 
 ```
 src/components
-├── Login.jsx                        登入表單
-├── ProductList.jsx                  商品列表
-└── ProductModal.jsx                 編輯、新增、刪除商品的 Modal
+├── Login.jsx                         登入表單
+├── ProductList.jsx                   商品列表
+├── AddNewModal.jsx                   新增商品 Modal
+├── EditModal.jsx                     編輯商品 Modal
+├── DeleteModal.jsx                   刪除商品 Modal
+└── ProductModal.jsx                  Modal 父元件，依照狀態來呈現對應的 Modal
 ```
 
 ```
 src/assets
-└── style.css                        網站整體的樣式設定
+└── style.css                         網站整體的樣式設定
 ```
 
 ## 靜態檔案
