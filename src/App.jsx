@@ -6,6 +6,7 @@ import "./assets/style.css";
 import Login from "./components/Login";
 import ProductList from "./components/ProductList";
 import ProductModal from "./components/ProductModal";
+import Pagination from "./components/Pagination";
 
 const API_BASE = "https://ec-course-api.hexschool.io/v2";
 const API_PATH = "book-rental";
@@ -14,14 +15,20 @@ const API_PATH = "book-rental";
  * App - 主應用程式元件
  */
 export default function App() {
-  const [isAuth, setisAuth] = useState(false); // 記錄使用者是否登入
+  const [isAuth, setIsAuth] = useState(false); // 記錄使用者是否登入
   const [products, setProducts] = useState([]); // 產品清單
+  const [pagination, setPagination] = useState({
+    total_pages: 1,
+    current_page: 1,
+    has_pre: false,
+    has_next: false,
+  }); // 分頁資訊
   const [templateData, setTemplateData] = useState({
     id: "",
     imageUrl: "",
     title: "",
     category: "",
-    tags: "", // 新增的標籤欄位
+    tags: "",
     unit: "",
     origin_price: "",
     price: "",
@@ -34,13 +41,15 @@ export default function App() {
 
   /**
    * getProductData - 取得產品資料
+   * @param {number} page - 頁碼（預設為 1）
    */
-  const getProductData = async () => {
+  const getProductData = async (page = 1) => {
     try {
       const response = await axios.get(
-        `${API_BASE}/api/${API_PATH}/admin/products`
+        `${API_BASE}/api/${API_PATH}/admin/products?page=${page}`
       );
-      setProducts(response.data.products);
+      setProducts(response.data.products); // 更新產品清單
+      setPagination(response.data.pagination); // 更新分頁資訊
     } catch (err) {
       console.error(
         "取得產品資料失敗:",
@@ -50,8 +59,65 @@ export default function App() {
   };
 
   /**
+   * checkAdmin - 驗證使用者是否登入
+   */
+  const checkAdmin = async () => {
+    try {
+      await axios.post(`${API_BASE}/api/user/check`);
+      setIsAuth(true);
+      getProductData(); // 初次載入第 1 頁的產品資料
+    } catch (err) {
+      console.error("驗證失敗:", err.response?.data?.message || err.message);
+      setIsAuth(false);
+    }
+  };
+
+  /**
+   * useEffect - 初始化驗證登入狀態並設定預設 header
+   */
+  useEffect(() => {
+    const token = document.cookie.replace(
+      /(?:(?:^|.*;\s*)hexToken\s*=\s*([^;]*).*$)|^.*$/,
+      "$1"
+    );
+    axios.defaults.headers.common.Authorization = token;
+    checkAdmin();
+  }, []);
+
+  /**
+   * openModal - 開啟 Modal
+   * @param {Object} product - 編輯的產品資料，或空物件（新增時）
+   * @param {string} type - Modal 的類型 ("edit" | "new" | "delete")
+   */
+  const openModal = (product, type) => {
+    setTemplateData({
+      id: product.id || "",
+      imageUrl: product.imageUrl || "",
+      title: product.title || "",
+      category: product.category || "",
+      tags: Array.isArray(product.tags)
+        ? product.tags.join(", ")
+        : product.tags || "",
+      unit: product.unit || "",
+      origin_price: product.origin_price || "",
+      price: product.price || "",
+      description: product.description || "",
+      content: product.content || "",
+      is_enabled: product.is_enabled || false,
+      imagesUrl: product.imagesUrl || [],
+    });
+    setModalType(type);
+  };
+
+  /**
+   * closeModal - 關閉 Modal
+   */
+  const closeModal = () => {
+    setModalType("");
+  };
+
+  /**
    * updateProductData - 新增或更新產品資料
-   *
    * @param {string} id - 產品 ID
    */
   const updateProductData = async (id) => {
@@ -83,7 +149,7 @@ export default function App() {
         console.log("產品新增成功");
       }
       setModalType(""); // 關閉 Modal
-      getProductData(); // 重新載入產品清單
+      getProductData(pagination.current_page); // 重新載入當前頁的產品清單
     } catch (err) {
       console.error(
         modalType === "edit" ? "更新失敗:" : "新增失敗:",
@@ -94,7 +160,6 @@ export default function App() {
 
   /**
    * delProductData - 刪除產品資料
-   *
    * @param {string} id - 產品 ID
    */
   const delProductData = async (id) => {
@@ -102,7 +167,7 @@ export default function App() {
       await axios.delete(`${API_BASE}/api/${API_PATH}/admin/product/${id}`);
       console.log("產品刪除成功");
       setModalType(""); // 關閉 Modal
-      getProductData(); // 重新載入產品清單
+      getProductData(pagination.current_page); // 重新載入當前頁的產品清單
     } catch (err) {
       console.error(
         "刪除產品失敗:",
@@ -111,137 +176,29 @@ export default function App() {
     }
   };
 
-  /**
-   * openModal - 開啟 Modal
-   *
-   * @param {Object} product - 要編輯的產品資料，或空物件（新增時）
-   * @param {string} type - Modal 的類型 ("edit" | "new" | "delete")
-   */
-  const openModal = (product, type) => {
-    setTemplateData({
-      id: product.id || "",
-      imageUrl: product.imageUrl || "",
-      title: product.title || "",
-      category: product.category || "",
-      tags: Array.isArray(product.tags)
-        ? product.tags.join(", ")
-        : product.tags || "",
-      unit: product.unit || "",
-      origin_price: product.origin_price || "",
-      price: product.price || "",
-      description: product.description || "",
-      content: product.content || "",
-      is_enabled: product.is_enabled || false,
-      imagesUrl: product.imagesUrl || [],
-    });
-    setModalType(type);
-  };
-
-  /**
-   * closeModal - 關閉 Modal
-   */
-  const closeModal = () => {
-    setModalType("");
-  };
-
-  /**
-   * useEffect - 初始驗證登入狀態，並嘗試取得產品清單
-   */
-  useEffect(() => {
-    // 取得 Token
-    const token = document.cookie.replace(
-      /(?:(?:^|.*;\s*)hexToken\s*=\s*([^;]*).*$)|^.*$/,
-      "$1"
-    );
-    axios.defaults.headers.common.Authorization = token;
-
-    // 驗證使用者是否已登入
-    (async () => {
-      try {
-        await axios.post(`${API_BASE}/api/user/check`);
-        setisAuth(true);
-        getProductData();
-      } catch (err) {
-        console.error("驗證失敗:", err.response?.data?.message || err.message);
-        setisAuth(false);
-      }
-    })();
-  }, []);
-
   return (
     <>
       {isAuth ? (
-        <>
+        <div className="container mt-4">
           {/* 顯示產品清單 */}
           <ProductList
             products={products}
             openModal={openModal}
-            setisAuth={setisAuth}
+            setIsAuth={setIsAuth}
           />
+          {/* 顯示分頁 */}
+          <Pagination pagination={pagination} changePage={getProductData} />
           {/* 顯示產品操作 Modal */}
           <ProductModal
             modalType={modalType}
             templateData={templateData}
-            handleModalInputChange={(e) => {
-              const { id, value, type, checked } = e.target;
-              setTemplateData((prevData) => ({
-                ...prevData,
-                [id]:
-                  id === "tags"
-                    ? value.trim() === "" // 如果 tags 為空字串
-                      ? []
-                      : value.split(",").map((tag) => tag.trim()) // 轉為陣列
-                    : type === "checkbox"
-                    ? checked
-                    : value,
-              }));
-            }}
-            handleImageChange={(index, value) => {
-              setTemplateData((prevData) => {
-                const newImages = [...prevData.imagesUrl];
-                newImages[index] = value;
-
-                // 確保新增新圖片欄位
-                if (
-                  value !== "" &&
-                  index === newImages.length - 1 &&
-                  newImages.length < 5
-                ) {
-                  newImages.push("");
-                }
-
-                // 移除空的圖片欄位
-                if (
-                  newImages.length > 1 &&
-                  newImages[newImages.length - 1] === ""
-                ) {
-                  newImages.pop();
-                }
-
-                return { ...prevData, imagesUrl: newImages };
-              });
-            }}
-            handleAddImage={() => {
-              setTemplateData((prevData) => ({
-                ...prevData,
-                imagesUrl: [...prevData.imagesUrl, ""],
-              }));
-            }}
-            handleRemoveImage={() => {
-              setTemplateData((prevData) => {
-                const newImages = [...prevData.imagesUrl];
-                newImages.pop();
-                return { ...prevData, imagesUrl: newImages };
-              });
-            }}
             closeModal={closeModal}
             updateProductData={updateProductData}
             delProductData={delProductData}
           />
-        </>
+        </div>
       ) : (
-        // 顯示登入頁面
-        <Login setisAuth={setisAuth} getProductData={getProductData} />
+        <Login setIsAuth={setIsAuth} />
       )}
     </>
   );
