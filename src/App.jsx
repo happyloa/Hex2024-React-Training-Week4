@@ -186,7 +186,14 @@ export default function App() {
               const { id, value, type, checked } = e.target;
               setTemplateData((prevData) => ({
                 ...prevData,
-                [id]: type === "checkbox" ? checked : value,
+                [id]:
+                  id === "tags"
+                    ? value.trim() === "" // 如果 tags 為空字串
+                      ? []
+                      : value.split(",").map((tag) => tag.trim()) // 轉為陣列
+                    : type === "checkbox"
+                    ? checked
+                    : value,
               }));
             }}
             handleImageChange={(index, value) => {

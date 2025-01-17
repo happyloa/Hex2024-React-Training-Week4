@@ -81,8 +81,8 @@ export default function ProductList({ products, openModal, setisAuth }) {
                 <tr key={product.id}>
                   <td>{product.category}</td>
                   <td>
-                    {/* 顯示標籤為 Pill badges 或 "沒有標籤" */}
-                    {product.tags && product.tags.length > 0 ? (
+                    {/* 判斷標籤是否存在 */}
+                    {Array.isArray(product.tags) && product.tags.length > 0 ? (
                       product.tags.map((tag, index) => (
                         <span
                           key={index}
