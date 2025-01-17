@@ -12,10 +12,17 @@ export default function EditModal({
 }) {
   const modalRef = useRef(null);
   const bsModal = useRef(null);
+  const [isModalReady, setIsModalReady] = useState(false); // 確保 DOM 已掛載
   const [isLoading, setIsLoading] = useState(false);
 
+  // 初始化狀態，確保 DOM 已掛載
   useEffect(() => {
-    if (modalRef.current) {
+    setIsModalReady(true); // 確保 DOM 已掛載
+  }, []);
+
+  // 初始化 Bootstrap Modal
+  useEffect(() => {
+    if (isModalReady && modalRef.current) {
       bsModal.current = new bootstrap.Modal(modalRef.current, {
         backdrop: "static",
         keyboard: false,
@@ -28,7 +35,7 @@ export default function EditModal({
         bsModal.current.dispose();
       }
     };
-  }, []);
+  }, [isModalReady]); // 當 isModalReady 改變時執行
 
   const handleConfirm = async () => {
     setIsLoading(true);
@@ -38,6 +45,8 @@ export default function EditModal({
       setIsLoading(false);
     }
   };
+
+  if (!isModalReady) return null; // 確保 Modal 節點已掛載後才渲染
 
   return (
     <div
@@ -190,18 +199,8 @@ export default function EditModal({
                 {/* 價格資訊輸入 */}
                 <div className="row">
                   {[
-                    {
-                      id: "origin_price",
-                      label: "原價",
-                      placeholder: "請輸入原價",
-                      type: "number",
-                    },
-                    {
-                      id: "price",
-                      label: "售價",
-                      placeholder: "請輸入售價",
-                      type: "number",
-                    },
+                    { id: "origin_price", label: "原價" },
+                    { id: "price", label: "售價" },
                   ].map((field) => (
                     <div className="col-md-6 mb-3" key={field.id}>
                       <label htmlFor={field.id} className="form-label fw-bold">
@@ -209,9 +208,9 @@ export default function EditModal({
                       </label>
                       <input
                         id={field.id}
-                        type={field.type}
+                        type="number"
                         className="form-control"
-                        placeholder={field.placeholder}
+                        placeholder={`請輸入${field.label}`}
                         value={templateData[field.id] || ""}
                         onChange={handleModalInputChange}
                         disabled={isLoading}
@@ -221,16 +220,8 @@ export default function EditModal({
                 </div>
                 {/* 描述與簡介輸入 */}
                 {[
-                  {
-                    id: "description",
-                    label: "產品描述",
-                    placeholder: "請輸入產品描述",
-                  },
-                  {
-                    id: "content",
-                    label: "產品簡介",
-                    placeholder: "請輸入產品簡介",
-                  },
+                  { id: "description", label: "產品描述" },
+                  { id: "content", label: "產品簡介" },
                 ].map((field) => (
                   <div className="mb-3" key={field.id}>
                     <label htmlFor={field.id} className="form-label fw-bold">
@@ -239,7 +230,7 @@ export default function EditModal({
                     <textarea
                       id={field.id}
                       className="form-control"
-                      placeholder={field.placeholder}
+                      placeholder={`請輸入${field.label}`}
                       value={templateData[field.id] || ""}
                       onChange={handleModalInputChange}
                       disabled={isLoading}

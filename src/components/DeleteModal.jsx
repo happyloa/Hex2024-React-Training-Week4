@@ -8,10 +8,16 @@ export default function DeleteModal({
 }) {
   const modalRef = useRef(null);
   const bsModal = useRef(null);
+  const [isModalReady, setIsModalReady] = useState(false); // 確保 DOM 已掛載
   const [isLoading, setIsLoading] = useState(false);
 
+  // 確保 DOM 完全渲染後初始化
   useEffect(() => {
-    if (modalRef.current) {
+    setIsModalReady(true); // 標記 DOM 已掛載
+  }, []);
+
+  useEffect(() => {
+    if (isModalReady && modalRef.current) {
       bsModal.current = new bootstrap.Modal(modalRef.current, {
         backdrop: "static",
         keyboard: false,
@@ -24,7 +30,7 @@ export default function DeleteModal({
         bsModal.current.dispose();
       }
     };
-  }, []);
+  }, [isModalReady]); // 當 DOM 準備好後執行初始化
 
   const handleConfirm = async () => {
     setIsLoading(true);
@@ -34,6 +40,8 @@ export default function DeleteModal({
       setIsLoading(false);
     }
   };
+
+  if (!isModalReady) return null; // 確保 Modal 節點準備好後才渲染
 
   return (
     <div
