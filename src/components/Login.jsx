@@ -8,9 +8,8 @@ const API_BASE = "https://ec-course-api.hexschool.io/v2";
  * Login - 用於處理使用者登入的元件
  *
  * @param {Function} setisAuth - 用於設定是否登入的狀態。
- * @param {Function} getProductData - 登入後調用以取得產品資料。
  */
-export default function Login({ setisAuth, getProductData }) {
+export default function Login({ setisAuth }) {
   // 管理登入表單的輸入資料
   const [formData, setFormData] = useState({
     username: "", // 使用者名稱（電子郵件）
@@ -19,6 +18,9 @@ export default function Login({ setisAuth, getProductData }) {
 
   // 控制加載狀態（是否顯示 Spinner）
   const [isLoading, setIsLoading] = useState(false);
+
+  // 管理錯誤訊息的狀態
+  const [errorMessage, setErrorMessage] = useState("");
 
   /**
    * handleInputChange - 處理表單輸入變更。
@@ -41,34 +43,34 @@ export default function Login({ setisAuth, getProductData }) {
   const handleSubmit = async (e) => {
     e.preventDefault(); // 防止表單預設行為（例如重新載入頁面）
     setIsLoading(true); // 顯示加載動畫
+    setErrorMessage(""); // 清空先前的錯誤訊息
+
     try {
       // 發送 POST 請求進行登入
       const response = await axios.post(`${API_BASE}/admin/signin`, formData);
 
-      // 確保回應有資料
-      if (response && response.data) {
-        const { token, expired } = response.data; // 從回應中解構 token 與 expired
-
-        // 儲存 Token 到 cookie 並設定過期時間
-        document.cookie = `hexToken=${token};expires=${new Date(expired)};`;
-
-        // 設定 Axios 的授權標頭
-        axios.defaults.headers.common.Authorization = token;
-
-        // 呼叫 getProductData 取得產品資料
-        await getProductData();
-
-        // 設定登入狀態為 true
-        setisAuth(true);
-      } else {
-        // 如果回應格式錯誤，拋出例外
-        throw new Error("登入回應格式錯誤，缺少必要的 data 屬性");
+      // 確保回應有正確的資料
+      if (!response || !response.data || !response.data.token) {
+        throw new Error("登入回應格式錯誤，缺少必要的欄位");
       }
+
+      const { token, expired } = response.data;
+
+      // 儲存 Token 到 cookie 並設定過期時間
+      document.cookie = `hexToken=${token};expires=${new Date(expired)};`;
+
+      // 設定 Axios 的授權標頭
+      axios.defaults.headers.common.Authorization = token;
+
+      // 設定登入狀態為 true
+      setisAuth(true);
     } catch (error) {
-      // 錯誤處理，顯示錯誤訊息
+      // 錯誤處理，更新錯誤訊息
       const errorMessage =
         error.response?.data?.message || "無法處理登入請求，請稍後再試";
-      alert("登入失敗: " + errorMessage);
+
+      // 更新錯誤訊息狀態
+      setErrorMessage(errorMessage);
     } finally {
       setIsLoading(false); // 停止加載動畫
     }
@@ -83,6 +85,13 @@ export default function Login({ setisAuth, getProductData }) {
         <div className="card-body">
           {/* 卡片標題 */}
           <h1 className="card-title text-center mb-4 fw-bold">登入系統</h1>
+
+          {/* 錯誤訊息顯示區塊 */}
+          {errorMessage && (
+            <div className="alert alert-danger" role="alert">
+              {errorMessage}
+            </div>
+          )}
 
           {/* 登入表單 */}
           <form onSubmit={handleSubmit}>
