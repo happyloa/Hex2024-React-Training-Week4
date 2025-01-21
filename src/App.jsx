@@ -44,12 +44,7 @@ export default function App() {
 
     setTemplateData((prevData) => ({
       ...prevData,
-      [id]:
-        id === "tags"
-          ? value // 將 tags 作為純字串儲存，後續處理
-          : type === "checkbox"
-          ? checked
-          : value,
+      [id]: type === "checkbox" ? checked : value, // 判斷是否為 checkbox，是則使用 checked，否則使用 value
     }));
   };
 
