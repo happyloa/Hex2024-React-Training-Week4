@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as bootstrap from "bootstrap";
+import axios from "axios";
 
 export default function EditModal({
   templateData,
@@ -14,13 +15,14 @@ export default function EditModal({
   const bsModal = useRef(null);
   const [isModalReady, setIsModalReady] = useState(false); // 確保 DOM 已掛載
   const [isLoading, setIsLoading] = useState(false);
+  const [file, setFile] = useState(null); // 主圖檔案
+  const [files, setFiles] = useState([]); // 副圖檔案
+  const API_PATH = "book-rental";
 
-  // 初始化狀態，確保 DOM 已掛載
   useEffect(() => {
-    setIsModalReady(true); // 確保 DOM 已掛載
+    setIsModalReady(true);
   }, []);
 
-  // 初始化 Bootstrap Modal
   useEffect(() => {
     if (isModalReady && modalRef.current) {
       bsModal.current = new bootstrap.Modal(modalRef.current, {
@@ -35,7 +37,69 @@ export default function EditModal({
         bsModal.current.dispose();
       }
     };
-  }, [isModalReady]); // 當 isModalReady 改變時執行
+  }, [isModalReady]);
+
+  const handleFileUpload = async () => {
+    if (!file) {
+      alert("請選擇主圖檔案");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("file-to-upload", file);
+
+    setIsLoading(true);
+    try {
+      const response = await axios.post(
+        `https://ec-course-api.hexschool.io/v2/api/${API_PATH}/admin/upload`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      if (response.data.success) {
+        handleModalInputChange({
+          target: { id: "imageUrl", value: response.data.imageUrl },
+        });
+        alert("主圖上傳成功！");
+      }
+    } catch (error) {
+      console.error(
+        "主圖上傳失敗：",
+        error.response?.data?.message || error.message
+      );
+      alert("主圖上傳失敗，請稍後再試。");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAdditionalImageUpload = async (index, file) => {
+    if (!file) {
+      alert(`請選擇第 ${index + 1} 張副圖檔案`);
+      return;
+    }
+    const formData = new FormData();
+    formData.append("file-to-upload", file);
+
+    setIsLoading(true);
+    try {
+      const response = await axios.post(
+        `https://ec-course-api.hexschool.io/v2/api/${API_PATH}/admin/upload`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      if (response.data.success) {
+        handleImageChange(index, response.data.imageUrl);
+        alert(`第 ${index + 1} 張副圖上傳成功！`);
+      }
+    } catch (error) {
+      console.error(
+        "副圖上傳失敗：",
+        error.response?.data?.message || error.message
+      );
+      alert("副圖上傳失敗，請稍後再試。");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleConfirm = async () => {
     setIsLoading(true);
@@ -45,12 +109,13 @@ export default function EditModal({
         tags: templateData.tags.split(",").map((tag) => tag.trim()), // 將逗號分隔的字串轉為陣列
       };
       await updateProductData(updatedData.id, updatedData);
+      closeModal();
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isModalReady) return null; // 確保 Modal 節點已掛載後才渲染
+  if (!isModalReady) return null;
 
   return (
     <div
@@ -70,76 +135,112 @@ export default function EditModal({
               disabled={isLoading}></button>
           </div>
           <div className="modal-body">
-            {/* 主圖網址輸入與預覽 */}
             <div className="row">
-              <div className="col-md-4">
+              {/* 左欄 - 圖片處理 */}
+              <div className="col-md-6">
+                <h5 className="fw-bold">圖片處理</h5>
+
+                {/* 主圖上傳 */}
                 <div className="mb-3">
-                  <label htmlFor="imageUrl" className="form-label fw-bold">
-                    主圖網址
+                  <label htmlFor="file-upload" className="form-label fw-bold">
+                    主圖上傳
                   </label>
                   <input
-                    type="text"
+                    type="file"
                     className="form-control"
-                    id="imageUrl"
-                    placeholder="請輸入主圖連結"
-                    value={templateData.imageUrl || ""}
-                    onChange={(e) =>
-                      handleModalInputChange({
-                        target: { id: "imageUrl", value: e.target.value },
-                      })
-                    }
+                    id="file-upload"
+                    accept="image/*"
+                    onChange={(e) => setFile(e.target.files[0])}
                     disabled={isLoading}
                   />
+                  <button
+                    className="btn btn-outline-primary mt-2"
+                    onClick={handleFileUpload}
+                    disabled={isLoading || !file}>
+                    {isLoading ? (
+                      <span
+                        className="spinner-border spinner-border-sm text-primary"
+                        role="status"></span>
+                    ) : (
+                      "上傳主圖"
+                    )}
+                  </button>
                   {templateData.imageUrl && (
-                    <img
-                      className="img-fluid mt-3 border"
-                      src={templateData.imageUrl}
-                      alt="主圖"
-                    />
+                    <div className="mt-2">
+                      <img
+                        src={templateData.imageUrl}
+                        alt="主圖"
+                        className="img-fluid border"
+                      />
+                    </div>
                   )}
                 </div>
-                {/* 多圖輸入與管理 */}
-                <div>
-                  {templateData.imagesUrl?.map((image, index) => (
-                    <div key={index} className="mb-2">
-                      <input
-                        type="text"
-                        className="form-control mb-2"
-                        value={image}
-                        onChange={(e) =>
-                          handleImageChange(index, e.target.value)
-                        }
-                        placeholder={`圖片網址 ${index + 1}`}
-                      />
-                      {image && (
+
+                {/* 副圖處理 */}
+                {templateData.imagesUrl?.map((image, index) => (
+                  <div key={index} className="mb-3">
+                    <label className="form-label fw-bold">
+                      上傳副圖 {index + 1}
+                    </label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept="image/*"
+                      onChange={(e) =>
+                        setFiles((prev) => {
+                          const updatedFiles = [...prev];
+                          updatedFiles[index] = e.target.files[0];
+                          return updatedFiles;
+                        })
+                      }
+                      disabled={isLoading}
+                    />
+                    <button
+                      className="btn btn-outline-primary mt-2"
+                      onClick={() =>
+                        handleAdditionalImageUpload(index, files[index])
+                      }
+                      disabled={isLoading || !files[index]}>
+                      {isLoading ? (
+                        <span
+                          className="spinner-border spinner-border-sm text-primary"
+                          role="status"></span>
+                      ) : (
+                        `上傳副圖 ${index + 1}`
+                      )}
+                    </button>
+                    {image && (
+                      <div className="mt-2">
                         <img
                           src={image}
                           alt={`副圖 ${index + 1}`}
-                          className="img-thumbnail mb-2"
+                          className="img-thumbnail"
                         />
-                      )}
-                    </div>
-                  ))}
-                  <div className="d-flex justify-content-between">
-                    <button
-                      className="btn btn-outline-primary btn-sm"
-                      onClick={handleAddImage}
-                      disabled={isLoading}>
-                      新增圖片
-                    </button>
-                    {templateData.imagesUrl?.length > 0 && (
-                      <button
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={handleRemoveImage}
-                        disabled={isLoading}>
-                        刪除最後一張圖片
-                      </button>
+                      </div>
                     )}
                   </div>
+                ))}
+                <div className="d-flex justify-content-between mt-3">
+                  <button
+                    className="btn btn-outline-primary btn-sm"
+                    onClick={handleAddImage}
+                    disabled={isLoading}>
+                    新增副圖
+                  </button>
+                  {templateData.imagesUrl?.length > 0 && (
+                    <button
+                      className="btn btn-outline-danger btn-sm"
+                      onClick={handleRemoveImage}
+                      disabled={isLoading}>
+                      刪除最後一張副圖
+                    </button>
+                  )}
                 </div>
               </div>
-              <div className="col-md-8">
-                {/* 標題欄位 */}
+
+              {/* 右欄 - 產品資訊 */}
+              <div className="col-md-6">
+                <h5 className="fw-bold">產品資訊</h5>
                 <div className="mb-3">
                   <label htmlFor="title" className="form-label fw-bold">
                     標題
@@ -154,7 +255,6 @@ export default function EditModal({
                     disabled={isLoading}
                   />
                 </div>
-                {/* 分類與標籤欄位 */}
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label htmlFor="category" className="form-label fw-bold">
@@ -178,14 +278,13 @@ export default function EditModal({
                       id="tags"
                       type="text"
                       className="form-control"
-                      placeholder="請輸入標籤，用逗號隔開，例如：標籤1, 標籤2"
+                      placeholder="請輸入標籤，用逗號分隔"
                       value={templateData.tags || ""}
                       onChange={(event) => handleModalInputChange(event)}
                       disabled={isLoading}
                     />
                   </div>
                 </div>
-                {/* 單位欄位 */}
                 <div className="mb-3">
                   <label htmlFor="unit" className="form-label fw-bold">
                     單位
@@ -200,7 +299,6 @@ export default function EditModal({
                     disabled={isLoading}
                   />
                 </div>
-                {/* 價格資訊輸入 */}
                 <div className="row">
                   {[
                     { id: "origin_price", label: "原價" },
@@ -222,26 +320,32 @@ export default function EditModal({
                     </div>
                   ))}
                 </div>
-                {/* 描述與簡介輸入 */}
-                {[
-                  { id: "description", label: "產品描述" },
-                  { id: "content", label: "產品簡介" },
-                ].map((field) => (
-                  <div className="mb-3" key={field.id}>
-                    <label htmlFor={field.id} className="form-label fw-bold">
-                      {field.label}
-                    </label>
-                    <textarea
-                      id={field.id}
-                      className="form-control"
-                      placeholder={`請輸入${field.label}`}
-                      value={templateData[field.id] || ""}
-                      onChange={handleModalInputChange}
-                      disabled={isLoading}
-                    />
-                  </div>
-                ))}
-                {/* 啟用狀態切換 */}
+                <div className="mb-3">
+                  <label htmlFor="description" className="form-label fw-bold">
+                    產品描述
+                  </label>
+                  <textarea
+                    id="description"
+                    className="form-control"
+                    placeholder="請輸入產品描述"
+                    value={templateData.description || ""}
+                    onChange={handleModalInputChange}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="content" className="form-label fw-bold">
+                    產品簡介
+                  </label>
+                  <textarea
+                    id="content"
+                    className="form-control"
+                    placeholder="請輸入產品簡介"
+                    value={templateData.content || ""}
+                    onChange={handleModalInputChange}
+                    disabled={isLoading}
+                  />
+                </div>
                 <div className="form-check mb-3">
                   <input
                     id="is_enabled"
@@ -277,8 +381,7 @@ export default function EditModal({
               {isLoading ? (
                 <span
                   className="spinner-border spinner-border-sm text-light"
-                  role="status"
-                  aria-hidden="true"></span>
+                  role="status"></span>
               ) : (
                 "確認"
               )}
