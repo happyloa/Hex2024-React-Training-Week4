@@ -6,23 +6,14 @@ import "./assets/style.css";
 import Login from "./components/Login";
 import ProductList from "./components/ProductList";
 import ProductModal from "./components/ProductModal";
-import Pagination from "./components/Pagination";
 
 const API_BASE = "https://ec-course-api.hexschool.io/v2";
 const API_PATH = "book-rental";
 
-/**
- * App - 主應用程式元件
- */
 export default function App() {
   const [isAuth, setIsAuth] = useState(false); // 記錄使用者是否登入
   const [products, setProducts] = useState([]); // 產品清單
-  const [pagination, setPagination] = useState({
-    total_pages: 1,
-    current_page: 1,
-    has_pre: false,
-    has_next: false,
-  }); // 分頁資訊
+  const [pagination, setPagination] = useState(null); // 分頁資訊
   const [templateData, setTemplateData] = useState({
     id: "",
     imageUrl: "",
@@ -39,30 +30,34 @@ export default function App() {
   }); // Modal 表單資料
   const [modalType, setModalType] = useState(""); // Modal 類型 ("edit" | "new" | "delete")
 
+  /**
+   * handleModalInputChange - 處理 Modal 表單的輸入變更
+   * @param {Event} event - 表單輸入事件
+   */
   const handleModalInputChange = (event) => {
     const { id, value, type, checked } = event.target;
 
     setTemplateData((prevData) => ({
       ...prevData,
-      [id]: type === "checkbox" ? checked : value, // 判斷是否為 checkbox，是則使用 checked，否則使用 value
+      [id]: type === "checkbox" ? checked : value,
     }));
   };
 
   /**
-   * getProductData - 取得產品資料
+   * fetchProducts - 取得產品清單
    * @param {number} page - 頁碼（預設為 1）
    */
-  const getProductData = async (page = 1) => {
+  const fetchProducts = async (page = 1) => {
     try {
       const response = await axios.get(
         `${API_BASE}/api/${API_PATH}/admin/products?page=${page}`
       );
-      setProducts(response.data.products); // 更新產品清單
-      setPagination(response.data.pagination); // 更新分頁資訊
-    } catch (err) {
+      setProducts(response.data.products);
+      setPagination(response.data.pagination);
+    } catch (error) {
       console.error(
         "取得產品資料失敗:",
-        err.response?.data?.message || err.message
+        error.response?.data?.message || error.message
       );
     }
   };
@@ -74,7 +69,7 @@ export default function App() {
     try {
       await axios.post(`${API_BASE}/api/user/check`);
       setIsAuth(true);
-      getProductData(); // 初次載入第 1 頁的產品資料
+      fetchProducts(); // 初次驗證成功後載入產品清單
     } catch (err) {
       console.error("驗證失敗:", err.response?.data?.message || err.message);
       setIsAuth(false);
@@ -157,13 +152,10 @@ export default function App() {
         await axios.post(url, productData);
         console.log("產品新增成功");
       }
-      setModalType(""); // 關閉 Modal
-      getProductData(pagination.current_page); // 重新載入當前頁的產品清單
+      setModalType("");
+      fetchProducts(); // 更新成功後重新取得產品列表
     } catch (err) {
-      console.error(
-        modalType === "edit" ? "更新失敗:" : "新增失敗:",
-        err.response?.data?.message || err.message
-      );
+      console.error("操作失敗:", err.response?.data?.message || err.message);
     }
   };
 
@@ -175,8 +167,8 @@ export default function App() {
     try {
       await axios.delete(`${API_BASE}/api/${API_PATH}/admin/product/${id}`);
       console.log("產品刪除成功");
-      setModalType(""); // 關閉 Modal
-      getProductData(pagination.current_page); // 重新載入當前頁的產品清單
+      setModalType("");
+      fetchProducts(); // 刪除成功後重新取得產品列表
     } catch (err) {
       console.error(
         "刪除產品失敗:",
@@ -189,15 +181,13 @@ export default function App() {
     <>
       {isAuth ? (
         <div className="container mt-4">
-          {/* 顯示產品清單 */}
           <ProductList
-            products={products}
             openModal={openModal}
             setIsAuth={setIsAuth}
+            products={products}
+            pagination={pagination}
+            fetchProducts={fetchProducts}
           />
-          {/* 顯示分頁 */}
-          <Pagination pagination={pagination} changePage={getProductData} />
-          {/* 顯示產品操作 Modal */}
           <ProductModal
             modalType={modalType}
             handleModalInputChange={handleModalInputChange}
@@ -205,6 +195,7 @@ export default function App() {
             closeModal={closeModal}
             updateProductData={updateProductData}
             delProductData={delProductData}
+            fetchProducts={fetchProducts}
           />
         </div>
       ) : (

@@ -44,6 +44,7 @@ export default function AddNewModal({
         tags: templateData.tags.split(",").map((tag) => tag.trim()), // 將逗號分隔的字串轉為陣列
       };
       await updateProductData(updatedData.id, updatedData);
+      closeModal();
     } finally {
       setIsLoading(false);
     }
