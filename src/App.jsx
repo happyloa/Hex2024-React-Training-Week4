@@ -44,6 +44,42 @@ export default function App() {
   };
 
   /**
+   * handleAddImage - 新增圖片網址
+   */
+  const handleAddImage = () => {
+    setTemplateData((prevData) => ({
+      ...prevData,
+      imagesUrl: [...(prevData.imagesUrl || []), ""],
+    }));
+  };
+
+  /**
+   * handleRemoveImage - 移除最後一張圖片網址
+   */
+  const handleRemoveImage = () => {
+    setTemplateData((prevData) => ({
+      ...prevData,
+      imagesUrl: prevData.imagesUrl.slice(0, -1),
+    }));
+  };
+
+  /**
+   * handleImageChange - 更新指定圖片網址
+   * @param {number} index - 圖片索引
+   * @param {string} value - 圖片網址
+   */
+  const handleImageChange = (index, value) => {
+    setTemplateData((prevData) => {
+      const updatedImagesUrl = [...prevData.imagesUrl];
+      updatedImagesUrl[index] = value;
+      return {
+        ...prevData,
+        imagesUrl: updatedImagesUrl,
+      };
+    });
+  };
+
+  /**
    * fetchProducts - 取得產品清單
    * @param {number} page - 頁碼（預設為 1）
    */
@@ -191,6 +227,9 @@ export default function App() {
           <ProductModal
             modalType={modalType}
             handleModalInputChange={handleModalInputChange}
+            handleImageChange={handleImageChange}
+            handleAddImage={handleAddImage}
+            handleRemoveImage={handleRemoveImage}
             templateData={templateData}
             closeModal={closeModal}
             updateProductData={updateProductData}
