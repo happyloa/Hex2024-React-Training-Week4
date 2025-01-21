@@ -1,23 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import * as bootstrap from "bootstrap";
+import axios from "axios";
 
 export default function AddNewModal({
   templateData,
   handleModalInputChange,
-  handleImageChange,
-  handleAddImage,
-  handleRemoveImage,
   closeModal,
   updateProductData,
 }) {
   const modalRef = useRef(null);
   const bsModal = useRef(null);
-  const [isModalReady, setIsModalReady] = useState(false); // 用於確保 DOM 已掛載
+  const [isModalReady, setIsModalReady] = useState(false); // 確保 DOM 已掛載
   const [isLoading, setIsLoading] = useState(false);
+  const [file, setFile] = useState(null); // 存放使用者選擇的檔案
 
-  // 在 Modal 渲染後初始化 Bootstrap Modal
+  // API 基底資訊
+  const API_PATH = "book-rental";
+
+  // 初始化 Bootstrap Modal
   useEffect(() => {
-    setIsModalReady(true); // 確保 DOM 已掛載
+    setIsModalReady(true);
   }, []);
 
   useEffect(() => {
@@ -34,7 +36,44 @@ export default function AddNewModal({
         bsModal.current.dispose();
       }
     };
-  }, [isModalReady]); // 當 isModalReady 改變時初始化
+  }, [isModalReady]);
+
+  // 上傳圖片處理
+  const handleFileUpload = async () => {
+    if (!file) {
+      alert("請先選擇一張圖片");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("file-to-upload", file);
+
+    setIsLoading(true);
+    try {
+      const response = await axios.post(
+        `https://ec-course-api.hexschool.io/v2/api/${API_PATH}/admin/upload`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      if (response.data.success) {
+        handleModalInputChange({
+          target: { id: "imageUrl", value: response.data.imageUrl },
+        });
+        alert("圖片上傳成功！");
+      }
+    } catch (error) {
+      console.error(
+        "圖片上傳失敗：",
+        error.response?.data?.message || error.message
+      );
+      alert("圖片上傳失敗，請稍後再試。");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleConfirm = async () => {
     setIsLoading(true);
@@ -50,7 +89,7 @@ export default function AddNewModal({
     }
   };
 
-  if (!isModalReady) return null; // 確保 Modal 完全掛載後再渲染
+  if (!isModalReady) return null;
 
   return (
     <div
@@ -70,196 +109,161 @@ export default function AddNewModal({
               disabled={isLoading}></button>
           </div>
           <div className="modal-body">
-            {/* 主圖網址輸入與預覽 */}
+            {/* 主圖上傳功能 */}
+            <div className="mb-3">
+              <label htmlFor="file-upload" className="form-label fw-bold">
+                上傳主圖
+              </label>
+              <input
+                type="file"
+                className="form-control"
+                id="file-upload"
+                accept="image/*"
+                onChange={(e) => setFile(e.target.files[0])}
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                className="btn btn-outline-primary mt-2"
+                onClick={handleFileUpload}
+                disabled={isLoading || !file}>
+                {isLoading ? (
+                  <span
+                    className="spinner-border spinner-border-sm text-primary"
+                    role="status"></span>
+                ) : (
+                  "上傳圖片"
+                )}
+              </button>
+              {templateData.imageUrl && (
+                <div className="mt-3">
+                  <img
+                    src={templateData.imageUrl}
+                    alt="上傳預覽"
+                    className="img-fluid border"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* 其他欄位（標題、分類、價格等） */}
+            <div className="mb-3">
+              <label htmlFor="title" className="form-label fw-bold">
+                標題
+              </label>
+              <input
+                id="title"
+                type="text"
+                className="form-control"
+                placeholder="請輸入標題"
+                value={templateData.title || ""}
+                onChange={handleModalInputChange}
+                disabled={isLoading}
+              />
+            </div>
+
             <div className="row">
-              <div className="col-md-4">
-                <div className="mb-3">
-                  <label htmlFor="imageUrl" className="form-label fw-bold">
-                    主圖網址
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="imageUrl"
-                    placeholder="請輸入主圖連結"
-                    value={templateData.imageUrl || ""}
-                    onChange={(e) =>
-                      handleModalInputChange({
-                        target: { id: "imageUrl", value: e.target.value },
-                      })
-                    }
-                    disabled={isLoading}
-                  />
-                  {templateData.imageUrl && (
-                    <img
-                      className="img-fluid mt-3 border"
-                      src={templateData.imageUrl}
-                      alt="主圖"
-                    />
-                  )}
-                </div>
-                {/* 多圖輸入與管理 */}
-                <div>
-                  {templateData.imagesUrl?.map((image, index) => (
-                    <div key={index} className="mb-2">
-                      <input
-                        type="text"
-                        className="form-control mb-2"
-                        value={image}
-                        onChange={(e) =>
-                          handleImageChange(index, e.target.value)
-                        }
-                        placeholder={`圖片網址 ${index + 1}`}
-                      />
-                      {image && (
-                        <img
-                          src={image}
-                          alt={`副圖 ${index + 1}`}
-                          className="img-thumbnail mb-2"
-                        />
-                      )}
-                    </div>
-                  ))}
-                  <div className="d-flex justify-content-between">
-                    <button
-                      className="btn btn-outline-primary btn-sm"
-                      onClick={handleAddImage}
-                      disabled={isLoading}>
-                      新增圖片
-                    </button>
-                    {templateData.imagesUrl?.length > 0 && (
-                      <button
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={handleRemoveImage}
-                        disabled={isLoading}>
-                        刪除最後一張圖片
-                      </button>
-                    )}
-                  </div>
-                </div>
+              <div className="col-md-6 mb-3">
+                <label htmlFor="category" className="form-label fw-bold">
+                  分類
+                </label>
+                <input
+                  id="category"
+                  type="text"
+                  className="form-control"
+                  placeholder="請輸入分類"
+                  value={templateData.category || ""}
+                  onChange={handleModalInputChange}
+                  disabled={isLoading}
+                />
               </div>
-              <div className="col-md-8">
-                {/* 標題欄位 */}
-                <div className="mb-3">
-                  <label htmlFor="title" className="form-label fw-bold">
-                    標題
-                  </label>
-                  <input
-                    id="title"
-                    type="text"
-                    className="form-control"
-                    placeholder="請輸入標題"
-                    value={templateData.title || ""}
-                    onChange={handleModalInputChange}
-                    disabled={isLoading}
-                  />
-                </div>
-                {/* 分類與標籤欄位 */}
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label htmlFor="category" className="form-label fw-bold">
-                      分類
-                    </label>
-                    <input
-                      id="category"
-                      type="text"
-                      className="form-control"
-                      placeholder="請輸入分類"
-                      value={templateData.category || ""}
-                      onChange={handleModalInputChange}
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label htmlFor="tags" className="form-label fw-bold">
-                      標籤
-                    </label>
-                    <input
-                      id="tags"
-                      type="text"
-                      className="form-control"
-                      placeholder="請輸入標籤，用逗號隔開，例如：標籤1, 標籤2"
-                      value={templateData.tags || ""}
-                      onChange={(event) => handleModalInputChange(event)}
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-                {/* 單位欄位 */}
-                <div className="mb-3">
-                  <label htmlFor="unit" className="form-label fw-bold">
-                    單位
-                  </label>
-                  <input
-                    id="unit"
-                    type="text"
-                    className="form-control"
-                    placeholder="請輸入單位（例如：本、件、箱）"
-                    value={templateData.unit || ""}
-                    onChange={handleModalInputChange}
-                    disabled={isLoading}
-                  />
-                </div>
-                {/* 價格資訊輸入 */}
-                <div className="row">
-                  {[
-                    { id: "origin_price", label: "原價" },
-                    { id: "price", label: "售價" },
-                  ].map((field) => (
-                    <div className="col-md-6 mb-3" key={field.id}>
-                      <label htmlFor={field.id} className="form-label fw-bold">
-                        {field.label}
-                      </label>
-                      <input
-                        id={field.id}
-                        type="number"
-                        className="form-control"
-                        placeholder={`請輸入${field.label}`}
-                        value={templateData[field.id] || ""}
-                        onChange={handleModalInputChange}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  ))}
-                </div>
-                {/* 描述與簡介輸入 */}
-                {[
-                  { id: "description", label: "產品描述" },
-                  { id: "content", label: "產品簡介" },
-                ].map((field) => (
-                  <div className="mb-3" key={field.id}>
-                    <label htmlFor={field.id} className="form-label fw-bold">
-                      {field.label}
-                    </label>
-                    <textarea
-                      id={field.id}
-                      className="form-control"
-                      placeholder={`請輸入${field.label}`}
-                      value={templateData[field.id] || ""}
-                      onChange={handleModalInputChange}
-                      disabled={isLoading}
-                    />
-                  </div>
-                ))}
-                {/* 啟用狀態切換 */}
-                <div className="form-check mb-3">
-                  <input
-                    id="is_enabled"
-                    className="form-check-input"
-                    type="checkbox"
-                    checked={!!templateData.is_enabled}
-                    onChange={handleModalInputChange}
-                    disabled={isLoading}
-                  />
-                  <label
-                    htmlFor="is_enabled"
-                    className="form-check-label fw-bold">
-                    是否啟用
-                  </label>
-                </div>
+              <div className="col-md-6 mb-3">
+                <label htmlFor="tags" className="form-label fw-bold">
+                  標籤
+                </label>
+                <input
+                  id="tags"
+                  type="text"
+                  className="form-control"
+                  placeholder="請輸入標籤，用逗號隔開，例如：標籤1, 標籤2"
+                  value={templateData.tags || ""}
+                  onChange={(event) => handleModalInputChange(event)}
+                  disabled={isLoading}
+                />
               </div>
             </div>
+
+            <div className="mb-3">
+              <label htmlFor="unit" className="form-label fw-bold">
+                單位
+              </label>
+              <input
+                id="unit"
+                type="text"
+                className="form-control"
+                placeholder="請輸入單位（例如：本、件、箱）"
+                value={templateData.unit || ""}
+                onChange={handleModalInputChange}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="row">
+              {[
+                { id: "origin_price", label: "原價" },
+                { id: "price", label: "售價" },
+              ].map((field) => (
+                <div className="col-md-6 mb-3" key={field.id}>
+                  <label htmlFor={field.id} className="form-label fw-bold">
+                    {field.label}
+                  </label>
+                  <input
+                    id={field.id}
+                    type="number"
+                    className="form-control"
+                    placeholder={`請輸入${field.label}`}
+                    value={templateData[field.id] || ""}
+                    onChange={handleModalInputChange}
+                    disabled={isLoading}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {[
+              { id: "description", label: "產品描述" },
+              { id: "content", label: "產品簡介" },
+            ].map((field) => (
+              <div className="mb-3" key={field.id}>
+                <label htmlFor={field.id} className="form-label fw-bold">
+                  {field.label}
+                </label>
+                <textarea
+                  id={field.id}
+                  className="form-control"
+                  placeholder={`請輸入${field.label}`}
+                  value={templateData[field.id] || ""}
+                  onChange={handleModalInputChange}
+                  disabled={isLoading}
+                />
+              </div>
+            ))}
+
+            <div className="form-check mb-3">
+              <input
+                id="is_enabled"
+                className="form-check-input"
+                type="checkbox"
+                checked={!!templateData.is_enabled}
+                onChange={handleModalInputChange}
+                disabled={isLoading}
+              />
+              <label htmlFor="is_enabled" className="form-check-label fw-bold">
+                是否啟用
+              </label>
+            </div>
           </div>
+
           <div className="modal-footer">
             <button
               type="button"
@@ -277,8 +281,7 @@ export default function AddNewModal({
               {isLoading ? (
                 <span
                   className="spinner-border spinner-border-sm text-light"
-                  role="status"
-                  aria-hidden="true"></span>
+                  role="status"></span>
               ) : (
                 "確認"
               )}
