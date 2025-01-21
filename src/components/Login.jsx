@@ -7,9 +7,9 @@ const API_BASE = "https://ec-course-api.hexschool.io/v2";
 /**
  * Login - 用於處理使用者登入的元件
  *
- * @param {Function} setisAuth - 用於設定是否登入的狀態。
+ * @param {Function} setIsAuth - 用於設定是否登入的狀態。
  */
-export default function Login({ setisAuth }) {
+export default function Login({ setIsAuth }) {
   // 管理登入表單的輸入資料
   const [formData, setFormData] = useState({
     username: "", // 使用者名稱（電子郵件）
@@ -49,12 +49,12 @@ export default function Login({ setisAuth }) {
       // 發送 POST 請求進行登入
       const response = await axios.post(`${API_BASE}/admin/signin`, formData);
 
-      // 確保回應有正確的資料
-      if (!response || !response.data || !response.data.token) {
+      // 檢查回應是否包含 token 和 expired
+      const { token, expired } = response.data;
+
+      if (!token || !expired) {
         throw new Error("登入回應格式錯誤，缺少必要的欄位");
       }
-
-      const { token, expired } = response.data;
 
       // 儲存 Token 到 cookie 並設定過期時間
       document.cookie = `hexToken=${token};expires=${new Date(expired)};`;
@@ -63,9 +63,10 @@ export default function Login({ setisAuth }) {
       axios.defaults.headers.common.Authorization = token;
 
       // 設定登入狀態為 true
-      setisAuth(true);
+      setIsAuth(true);
+      console.log("登入成功！");
     } catch (error) {
-      // 錯誤處理，更新錯誤訊息
+      // 若伺服器返回非 2xx 狀態碼，檢查回應中的訊息
       const errorMessage =
         error.response?.data?.message || "無法處理登入請求，請稍後再試";
 
