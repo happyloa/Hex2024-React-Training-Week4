@@ -34,7 +34,7 @@ export default function EditModal({
 
     return () => {
       if (bsModal.current) {
-        bsModal.current.dispose();
+        bsModal.current.hide();
       }
     };
   }, [isModalReady]);

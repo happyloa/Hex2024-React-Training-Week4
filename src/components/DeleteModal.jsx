@@ -27,7 +27,7 @@ export default function DeleteModal({
 
     return () => {
       if (bsModal.current) {
-        bsModal.current.dispose();
+        bsModal.current.hide();
       }
     };
   }, [isModalReady]); // 當 DOM 準備好後執行初始化

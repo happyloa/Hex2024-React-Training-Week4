@@ -35,7 +35,7 @@ export default function AddNewModal({
 
     return () => {
       if (bsModal.current) {
-        bsModal.current.dispose();
+        bsModal.current.hide();
       }
     };
   }, [isModalReady]);
